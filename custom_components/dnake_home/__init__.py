@@ -13,6 +13,7 @@ from .climate import load_climates, update_climates_state
 from .fan import load_fans, update_fans_state
 from .sensor import load_sensors, update_sensors_state
 from .discovery import async_discover_gateway
+from .cleanup import async_cleanup_stale_devices
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             load_sensors(device_list)
             # 初始化各类设备
             await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+            # 网关设备编号变化会留下空壳设备（无实体、无区域），顺手清理
+            await async_cleanup_stale_devices(hass, device_list)
 
             state = {"fail": 0, "last_discovery": 0.0}
 
