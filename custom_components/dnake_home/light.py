@@ -103,4 +103,5 @@ class DnakeLight(LightEntity):
 
     def update_state(self, state):
         self._is_on = state.get("state", 0) == 1
-        self.async_write_ha_state()
+        if self.hass is not None:
+            self.async_write_ha_state()

@@ -164,4 +164,5 @@ class DnakeCover(CoverEntity):
         self._current_level = current_level
         if update_target_level:
             self._target_level = current_level
-        self.async_write_ha_state()
+        if self.hass is not None:
+            self.async_write_ha_state()

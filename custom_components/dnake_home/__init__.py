@@ -9,10 +9,12 @@ from .core.assistant import assistant
 from .cover import load_covers, update_covers_state
 from .light import load_lights, update_lights_state
 from .climate import load_climates, update_climates_state
+from .fan import load_fans, update_fans_state
+from .sensor import load_sensors, update_sensors_state
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.LIGHT, Platform.COVER, Platform.CLIMATE]
+PLATFORMS = [Platform.LIGHT, Platform.COVER, Platform.CLIMATE, Platform.FAN, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -31,6 +33,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             load_lights(device_list)
             load_covers(device_list)
             load_climates(device_list)
+            load_fans(device_list)
+            load_sensors(device_list)
             # 初始化各类设备
             await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -40,6 +44,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 update_lights_state(states)
                 update_covers_state(states)
                 update_climates_state(states)
+                update_fans_state(states)
+                update_sensors_state(states)
 
             # 初始化设备状态
             await _async_refresh_states()

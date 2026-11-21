@@ -205,5 +205,53 @@ class Assistant(__AssistantCore):
             }
         )
 
+    def set_heater_power(self, dev_no, dev_ch, is_open: bool):
+        power = Power.On if is_open else Power.Off
+        return self.do_action(
+            {
+                "action": Action.CtrlDev.value,
+                "cmd": Cmd.Heater.value,
+                "oper": power.value,
+                "devNo": dev_no,
+                "devCh": dev_ch,
+            }
+        )
+
+    def set_heater_temperature(self, dev_no, dev_ch, temp: int):
+        return self.do_action(
+            {
+                "action": Action.CtrlDev.value,
+                "cmd": Cmd.Heater.value,
+                "oper": "setTemp",
+                "param": temp,
+                "devNo": dev_no,
+                "devCh": dev_ch,
+            }
+        )
+
+    def set_fresh_air_power(self, dev_no, dev_ch, is_open: bool):
+        power = Power.On if is_open else Power.Off
+        return self.do_action(
+            {
+                "action": Action.CtrlDev.value,
+                "cmd": Cmd.FreshAir.value,
+                "oper": power.value,
+                "devNo": dev_no,
+                "devCh": dev_ch,
+            }
+        )
+
+    def set_fresh_air_flow(self, dev_no, dev_ch, flow: int):
+        return self.do_action(
+            {
+                "action": Action.CtrlDev.value,
+                "cmd": Cmd.FreshAir.value,
+                "oper": "setFlow",
+                "param": flow,
+                "devNo": dev_no,
+                "devCh": dev_ch,
+            }
+        )
+
 
 assistant = Assistant()
