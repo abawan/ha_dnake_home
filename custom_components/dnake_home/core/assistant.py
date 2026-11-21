@@ -6,6 +6,9 @@ from .utils import encode_auth, get_uuid
 
 _LOGGER = logging.getLogger(__name__)
 
+# 单次请求超时：网关离线时避免线程被长时间占用
+REQUEST_TIMEOUT = 15
+
 
 class __AssistantCore:
     def __init__(self):
@@ -38,7 +41,7 @@ class __AssistantCore:
     def get(self, path):
         try:
             url = self._get_url(path)
-            resp = requests.get(url, headers=self._get_header())
+            resp = requests.get(url, headers=self._get_header(), timeout=REQUEST_TIMEOUT)
             resp.raise_for_status()
             return resp.json()
         except requests.exceptions.RequestException as e:
@@ -52,6 +55,7 @@ class __AssistantCore:
             resp = requests.post(
                 url,
                 headers=self._get_header(),
+                timeout=REQUEST_TIMEOUT,
                 json={
                     "fromDev": self.from_device,
                     "toDev": self.to_device,
@@ -70,6 +74,24 @@ class __AssistantCore:
 
 
 class Assistant(__AssistantCore):
+
+    def probe_host(self, ip: str) -> bool:
+        """用已保存的凭据探测指定 IP 是否为同一台网关。
+
+        仅读取 /smart/iot.info，不修改 self.gw_ip，可安全用于 IP 漂移发现。
+        """
+        try:
+            resp = requests.get(
+                f"http://{ip}/smart/iot.info",
+                headers=self._get_header(),
+                timeout=6,
+            )
+            resp.raise_for_status()
+            info = resp.json()
+            return bool(info.get("gwIotName") or info.get("iotDeviceName"))
+        except Exception as e:  # noqa: BLE001
+            _LOGGER.debug("probe host %s fail: %s", ip, e)
+            return False
 
     def query_iot_info(self):
         iot_info = self.get("/smart/iot.info")

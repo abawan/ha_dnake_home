@@ -1,5 +1,37 @@
 # 变更记录
 
+## 1.2.0 — 网关 IP 漂移自动发现
+
+网关地址由路由器 DHCP 下发，租约变化后会漂移。此前集成写死 `gateway_ip`，
+一旦漂移就表现为「实体还在、状态冻结」，日志反复刷 `query all device status fail`，
+必须手工改 `.storage` 才能恢复。
+
+### 新增
+
+- 新增 `discovery.py`：`async_discover_gateway()`
+  - 对配置网段做 `/24` 的 TCP 80 扫描（并发 200，超时 0.8s，实测约 2s 扫完）
+  - 端口指纹筛选：`80 + 5500 + 5600 + 9800 + 9900`
+    （门口机/室内机是 `5500/5555/5600/8080/9800/9900`，**没有 80**，据此区分）
+  - 读 `/proc/net/arp`，狄耐克 OUI `bc:f8:11` 的候选优先校验
+  - 最终用已保存凭据请求 `/smart/iot.info` 确认身份，读得到才算数
+- 启动钩子：`query_iot_info` 失败时自动触发扫描，命中后
+  `async_update_entry` 写回 `gateway_ip`（无 update listener，不会触发重载）
+- 运行时钩子：连续 6 次轮询失败触发扫描，冷却 600s，避免网关真离线时反复扫网段
+
+### 改进
+
+- `core/assistant.py` 所有 HTTP 请求增加 15s 超时
+  - 原来无超时，网关不可达时 executor 线程会被长时间占用
+- 新增 `Assistant.probe_host(ip)`：只读 `/smart/iot.info` 校验身份，不改 `gw_ip`
+
+### 注意
+
+- 安装/升级时**备份目录不要放在 `custom_components/` 下**
+  - HA 会把 `dnake_home.bak-xxx` 当成组件名去 import，整个集成 setup 会失败
+  - 备份请放到 `config/.bak_dnake/` 之类的位置
+
+---
+
 ## 1.1.1 — 新增地暖与新风支持
 
 基于上游 `1.1.0`，仅做增量扩展，**不改变任何已有实体的 unique_id 与行为**。
